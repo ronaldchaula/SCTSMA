@@ -1,3 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="background_description">Application background image</string>
     <string name="app_name">SCTSMA</string>
+    <string name="welcome_note">Welcome To Social Commerce Trust And Security Management Application</string>
+    <string name="login_heading">Login</string>
+    <string name="preliminary">Preliminary</string>
+    <string name="registration">Registration</string>
+    <string name="home_label">HOME</string>
+    <string name="home_screen_welcome_note">Hello $username</string>
+    <string name="phone_input_label">(+255)07XXXXXXXX</string>
 </resources>

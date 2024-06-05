@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    kotlin("plugin.serialization") version "2.0.0"
 }
 
 android {
@@ -59,6 +60,34 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    //voyager dependencies
+
+    implementation(libs.voyager.navigator)
+
+    // Screen Model
+    implementation(libs.voyager.screenmodel)
+
+    // BottomSheetNavigator
+    implementation(libs.voyager.bottom.sheet.navigator)
+
+    // TabNavigator
+    implementation(libs.voyager.tab.navigator)
+
+    // Transitions
+    implementation(libs.voyager.transitions)
+
+    //Ktor
+    implementation (libs.ktor.client.core)
+    implementation (libs.ktor.client.android)
+    implementation (libs.ktor.client.serialization)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation (libs.ktor.client.logging)
+    implementation (libs.logback.classic)
+
+    implementation (libs.kotlinx.serialization.json)
+    implementation(libs.androidx.runtime.livedata)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

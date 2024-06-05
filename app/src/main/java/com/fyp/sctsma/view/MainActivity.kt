@@ -1,4 +1,4 @@
-package com.fyp.sctsma
+package com.fyp.sctsma.view
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,20 +11,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.transitions.SlideTransition
 import com.fyp.sctsma.ui.theme.SCTSMATheme
+import com.fyp.sctsma.view.composables.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val navigator = LocalNavigator.currentOrThrow
             SCTSMATheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+
+                    Navigator(screen = LandingScreen()){
+                            navigator -> SlideTransition(navigator = navigator)
+                    }
+
             }
         }
     }
