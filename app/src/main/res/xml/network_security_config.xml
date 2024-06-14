@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">pesa-lock-app.onrender.com</domain>
+        <!-- Add other domains if needed -->
+    </domain-config>
+</network-security-config>

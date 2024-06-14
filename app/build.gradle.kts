@@ -41,7 +41,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.5"
     }
     packaging {
         resources {
@@ -51,7 +51,8 @@ android {
 }
 
 dependencies {
-
+//material 2 icons extended
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -77,17 +78,30 @@ dependencies {
     implementation(libs.voyager.transitions)
 
     //Ktor
-    implementation (libs.ktor.client.core)
-    implementation (libs.ktor.client.android)
-    implementation (libs.ktor.client.serialization)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation (libs.ktor.client.logging)
+//    implementation (libs.ktor.client.core)
+//    implementation (libs.ktor.client.android)
+//    implementation (libs.ktor.client.serialization)
+//    implementation(libs.ktor.client.content.negotiation)
+//    implementation(libs.ktor.serialization.kotlinx.json)
+//    implementation (libs.ktor.client.logging)
+    //retrofit
+
+    implementation(libs.retrofit)
+    //serialization
+    implementation(libs.converter.moshi)
+
     implementation (libs.logback.classic)
 
     implementation (libs.kotlinx.serialization.json)
     implementation(libs.androidx.runtime.livedata)
+    implementation (libs.okhttp)
+    implementation(libs.converter.gson)
+    implementation(libs.converter.moshi)
+    implementation(libs.logging.interceptor)
+    implementation( libs.kotlin.reflect)
+    implementation(libs.moshi.kotlin)
 
+    implementation(libs.androidx.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

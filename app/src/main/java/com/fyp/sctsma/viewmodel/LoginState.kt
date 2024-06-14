@@ -1,6 +1,7 @@
 package com.fyp.sctsma.viewmodel
 
-sealed class LoginState {
-    data object Success : LoginState()
-    data class Error(val message: String) : LoginState()
+import cafe.adriel.voyager.core.model.ScreenModel
+
+class LoginState: ScreenModel {
+    val success: Boolean = false
 }

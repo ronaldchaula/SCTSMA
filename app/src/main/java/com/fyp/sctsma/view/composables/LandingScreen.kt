@@ -41,9 +41,7 @@ class LandingScreen: Screen{
         // we write our content inside this area
         // define the navigator component here
         val navigator = LocalNavigator.currentOrThrow
-
-
-            Landing(navigator)
+        Landing(navigator)
 
 
 
@@ -183,7 +181,7 @@ Image(
 
 
 
-@Preview()
+@Preview
 @Composable
 fun LandingPreview(){
     Landing( )
