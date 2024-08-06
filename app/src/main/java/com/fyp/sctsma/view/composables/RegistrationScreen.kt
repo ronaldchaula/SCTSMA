@@ -19,16 +19,9 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,26 +39,26 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.fyp.sctsma.R
+import com.fyp.sctsma.view.composables.commonComponents.CircularProgressDisplay
+import com.fyp.sctsma.view.composables.commonComponents.ConfirmedPasswordInput
+import com.fyp.sctsma.view.composables.commonComponents.PasswordInput
+import com.fyp.sctsma.view.composables.commonComponents.PhoneNumberInput
+import com.fyp.sctsma.view.composables.commonComponents.ValidationErrorMessage
+import com.fyp.sctsma.view.composables.navigation.ExternalRoutes
 import com.fyp.sctsma.viewmodel.RegisterViewModel
 
-class RegistrationScreen : Screen{
-    @Composable
-    override fun Content() {
+@Composable
+fun RegistrationScreen(initialNavController: NavHostController) {
 
-        val registerViewModel = rememberScreenModel {RegisterViewModel()}
+        val registerViewModel = remember{RegisterViewModel()}
         val context = LocalContext.current
         //phone and email regex
         Regex("^(\\+255)?\\d{10,}\$")
@@ -73,9 +66,7 @@ class RegistrationScreen : Screen{
         val options = listOf("Business", "Individual")
         val selectedOption = remember { mutableStateOf(options[0]) }
 
-        val registrationNavigator = LocalNavigator.currentOrThrow
-
-        //  Input state holders
+    //  Input state holders
         val verticalScrollState = rememberScrollState()
 
         val phoneNumber = remember { mutableStateOf("")}
@@ -97,55 +88,55 @@ class RegistrationScreen : Screen{
         val validationMessage by registerViewModel.errorMessage.observeAsState()
         val receivedOTP by registerViewModel.obtainedOTP.observeAsState()
         val otpToDisplay = receivedOTP ?: ""
-       Register(
-           registrationNavigator,
-           verticalScrollState,
-           phoneNumber.value,
-           phoneNumberBorderColor.value,
-           {
+        val isLoading by registerViewModel.isLoading.observeAsState()
+    Register(
+        initialNavController,
+        verticalScrollState,
+        phoneNumber.value,
+        phoneNumberBorderColor.value,
+        {
 
             phoneNumber.value = it
             registerViewModel.phoneNumber.value = it
-           },
-           password.value,
-           passwordBorderColor.value
-           ,{
-            password.value =  it
-            registerViewModel.password.value =  it
-           },
-           confirmPassword.value,
-           confirmPasswordBorderColor.value,
-           {
-           confirmPassword.value =  it
-           registerViewModel.confirmPassword.value =  it
-           },
-           registerViewModel,
-           options,
-           selectedOption,
-           {
-               selectedOption.value = it
-               registerViewModel.accountType.value = it
-           },
-           passwordVisibility.value,
-           {
-               passwordVisibility.value = !passwordVisibility.value
-           },
-           confirmPasswordVisibility.value,
-           {
-               confirmPasswordVisibility.value = !confirmPasswordVisibility.value
-           },
-           validationMessage
-           ,
-           registrationSuccess,
-           otp = otpToDisplay,
-           context
-           )
+        },
+        password.value,
+        passwordBorderColor.value, {
+            password.value = it
+            registerViewModel.password.value = it
+        },
+        confirmPassword.value,
+        confirmPasswordBorderColor.value,
+        {
+            confirmPassword.value = it
+            registerViewModel.confirmPassword.value = it
+        },
+        registerViewModel,
+        options,
+        selectedOption,
+        {
+            selectedOption.value = it
+            registerViewModel.accountType.value = it
+        },
+        passwordVisibility.value,
+        {
+            passwordVisibility.value = !passwordVisibility.value
+        },
+        confirmPasswordVisibility.value,
+        {
+            confirmPasswordVisibility.value = !confirmPasswordVisibility.value
+        },
+        validationMessage,
+        registrationSuccess,
+        otp = otpToDisplay,
+        context,
+        isLoading = isLoading
+    )
     }
-}
+
 
 @Composable
 fun Register(
-    navigator: Navigator = LocalNavigator.currentOrThrow,
+    navigatorComponent: NavController,
     verticalScrollState: ScrollState,
     phoneNumber: String,
     phoneNumberBorderColor: Color,
@@ -166,8 +157,9 @@ fun Register(
     onConfirmPasswordVisibilityChange: (Boolean) -> Unit,
     validationMessage: String?,
     registrationSuccess: Boolean?,
-    otp:String,
-    context: Context
+    otp: String,
+    context: Context,
+    isLoading: Boolean?
 ) {
 
     //state management
@@ -182,10 +174,13 @@ fun Register(
                 .fillMaxHeight()
                 .verticalScroll(verticalScrollState, enabled = true),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         )
-
         {
+            Spacer(modifier = Modifier.height(20.dp))
+
+                CircularProgressDisplay(isLoading!!)
+
             //App title text
             Text(text = stringResource(R.string.app_name),
                 modifier = Modifier
@@ -200,13 +195,13 @@ fun Register(
                 )
 
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(5.dp))
             Text(text = stringResource(R.string.preliminary),
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
                     .padding(
-                        start = 8.dp,
+                        start = 32.dp,
                         bottom = 0.dp,
                         top = 0.dp
                     ),
@@ -220,7 +215,7 @@ fun Register(
 
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             //Login form container
 
             Column(
@@ -249,31 +244,9 @@ fun Register(
                         spotColor = Color.DarkGray // Color for light source
                     )
                 ){
-                if (validationMessage != null){
-                    Column(
-                        modifier = Modifier
-                            .background(
-                                Color.Red
-                            )
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(top = 4.dp, bottom = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = validationMessage,
-                            fontSize = 8.sp,
-                            textAlign = TextAlign.Center,
-                            color = Color.White,
-                            modifier = Modifier.padding(4.dp)
-                        )
-                    }
+                ValidationErrorMessage(validationMessage)
 
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-
-
+                Spacer(modifier = Modifier.height(10.dp))
 
                PhoneNumberInput(
                    phoneNumber = phoneNumber,
@@ -314,31 +287,30 @@ fun Register(
                 }
                 RegisterButton(registerViewModel)
 
-                LaunchedEffect(key1 = registrationSuccess) {
-                    if (registrationSuccess == true) {
-                        Toast.makeText(
-                            context,
-                            "Accounted Created Successfully",
-                            Toast.LENGTH_SHORT
-                        ).show()
 
-                        navigator.push(OTPScreen(otp)) // Push OTP screen onto stack
-                    }
-                    }
                 Spacer(modifier = Modifier.height(2.dp))
                 MessageLabel()
                 Spacer(modifier = Modifier.height(2.dp))
-                LoginScreenRedirectButton(navigator)
+                LoginScreenRedirectButton(navigatorComponent)
                 Spacer(modifier = Modifier.height(20.dp))
                 }
 
 
             }
 
-
-
-
+  //move user to new screen
+    LaunchedEffect(key1 = registrationSuccess) {
+        if (registrationSuccess == true) {
+            Toast.makeText(context,"Accounted Created Successfully",Toast.LENGTH_LONG).show()
+            navigatorComponent.popBackStack(0, inclusive = true)
+            val path = ExternalRoutes.OTPScreen.route + "/${otp}"
+            navigatorComponent.navigate(path)
         }
+    }
+}
+
+
+
 
 
 
@@ -362,10 +334,10 @@ private fun MessageLabel() {
 }
 
 @Composable
-private fun LoginScreenRedirectButton(navigator: Navigator) {
+private fun LoginScreenRedirectButton(navigator: NavController) {
     Button(
         onClick = {
-            navigator.push(LoginScreen())
+            navigator.navigate(ExternalRoutes.LoginScreen.route)
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFF2F4858)
@@ -398,181 +370,18 @@ private fun LoginScreenRedirectButton(navigator: Navigator) {
 
 
 
+
+
+
+
+
 @Composable
- fun PhoneNumberInput(
-    phoneNumber: String,
-    onContactPhoneChange: (String) -> Unit,
-    phoneNumberBorderColor: Color
+private fun RegisterButton(
+    registerViewModel: RegisterViewModel
 ) {
-    Text(
-        text = "Phone Number",
-        style = TextStyle(
-            fontSize = 16.sp,
-            fontWeight = FontWeight(500),
-            color = Color(0xFF2F4858)
-        ),
-        modifier = Modifier
-            .fillMaxWidth(.9f)
-            .padding(bottom = 2.5.dp)
-    )
-
-    //phone input
-    OutlinedTextField(
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-        value = phoneNumber,
-        onValueChange = onContactPhoneChange,
-        placeholder = {
-            Text(
-                text = "255-XXX-XXXXXXX",
-                fontSize = 14.sp
-            )
-        },
-        //styling
-
-        textStyle = TextStyle(
-            fontSize = 14.sp,
-            fontWeight = FontWeight(500),
-            color = Color(0xFF2F4858)
-        ),
-        shape = RoundedCornerShape(15.dp),
-        modifier = Modifier
-            .fillMaxWidth(.9f)
-            .height(50.dp)
-            .border(
-                width = 1.dp,
-                color = phoneNumberBorderColor,
-                shape = RoundedCornerShape(15.dp)
-            )
-            .background(Color(0xFFFAFAFA))
-    )
-}
-
-@Composable
-fun PasswordInput(
-    password: String,
-    onPasswordChange: (String) -> Unit,
-    passwordBorderColor: Color,
-    passwordVisibility: Boolean,
-    onPasswordVisibilityChange: (Boolean) -> Unit
-    ) {
-    Text(
-        text = "Password",
-        style = TextStyle(
-            fontSize = 16.sp,
-            fontWeight = FontWeight(500),
-            color = Color(0xFF2F4858)
-        ),
-        modifier = Modifier
-            .fillMaxWidth(.9f)
-            .padding(bottom = 2.5.dp, top = 2.5.dp)
-    )
-
-    //Password
-    OutlinedTextField(
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-        trailingIcon = {
-            IconButton(
-                onClick = { onPasswordVisibilityChange(!passwordVisibility) }
-            ) {
-                Icon(
-                    imageVector = if (passwordVisibility) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                    contentDescription = if (passwordVisibility) "Hide password" else "Show password"
-                )
-            }
-        },
-        value = password,
-        onValueChange = onPasswordChange,
-        placeholder = {
-            Text(
-                text = "xxxxxxxxxx",
-                fontSize = 14.sp
-            )
-        },
-        //styling
-        textStyle = TextStyle(
-            fontSize = 14.sp,
-            fontWeight = FontWeight(500),
-            color = Color(0xFF2F4858)
-        ),
-        shape = RoundedCornerShape(15.dp),
-        modifier = Modifier
-            .fillMaxWidth(.9f)
-            .height(50.dp)
-            .border(
-                width = .1.dp,
-                color = passwordBorderColor,
-                shape = RoundedCornerShape(15.dp)
-            )
-            .background(Color(0xFFFAFAFA))
-    )
-}
-@Composable
-fun ConfirmedPasswordInput(
-    confirmPassword: String,
-    onConfirmedPasswordChange: (String) -> Unit,
-    confirmPasswordBorderColor: Color,
-    confirmPasswordVisibility: Boolean,
-    onConfirmPasswordVisibilityChange: (Boolean) -> Unit
-) {
-
-    Text(
-        text = "confirm Password",
-        style = TextStyle(
-            fontSize = 16.sp,
-            fontWeight = FontWeight(500),
-            color = Color(0xFF2F4858)
-        ),
-        modifier = Modifier
-            .fillMaxWidth(.9f)
-            .padding(bottom = 2.5.dp, top = 2.5.dp)
-    )
-    OutlinedTextField(
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        visualTransformation = if (confirmPasswordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-        trailingIcon = {
-            IconButton(
-                onClick =  {onConfirmPasswordVisibilityChange(!confirmPasswordVisibility) }
-            ) {
-                Icon(
-                    imageVector = if (confirmPasswordVisibility) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                    contentDescription = if (confirmPasswordVisibility) "Hide password" else "Show password"
-                )
-            }
-        },
-       textStyle = TextStyle(
-           fontSize = 14.sp,
-           fontWeight = FontWeight(500),
-           color = Color(0xFF2F4858)
-       ),
-        value = confirmPassword,
-        onValueChange = onConfirmedPasswordChange,
-        placeholder = {
-            Text(
-                text = "xxxxxxxxxx",
-                fontSize = 14.sp
-            )
-        },
-        //styling
-
-        shape = RoundedCornerShape(15.dp),
-        modifier = Modifier
-            .fillMaxWidth(.9f)
-            .height(50.dp)
-            .border(
-                width = .1.dp,
-                color = confirmPasswordBorderColor,
-                shape = RoundedCornerShape(15.dp)
-            )
-            .background(Color(0xFFFAFAFA))
-    )
-}
-
-@Composable
-private fun RegisterButton(registerViewModel: RegisterViewModel) {
     Button(
         onClick = {
-          registerViewModel.registerUser()
+            registerViewModel.registerUser()
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFF6FC07A)
@@ -599,35 +408,37 @@ private fun RegisterButton(registerViewModel: RegisterViewModel) {
     }
 }
 
-//@Composable
-//@Preview
-//fun RegistrationScreenPreview(){
-//    val options = listOf("Business", "Individual")
-//    //val selectedOption = remember { mutableStateOf(options[0]) }
-//    Register(
-//        navigator = LocalNavigator.currentOrThrow,
-//        verticalScrollState = rememberScrollState(),
-//        phoneNumber = "",
-//        phoneNumberBorderColor = Color(0xFF2F4858),
-//        onContactPhoneChange = {},
-//        password = "",
-//        passwordBorderColor = Color(0xFF2F4858),
-//        onPasswordChange = {},
-//        confirmPassword = "",
-//        confirmPasswordBorderColor = Color(0xFF2F4858),
-//        onConfirmedPasswordChange = {},
-//        registerViewModel = RegisterViewModel(),
-//        options = listOf("Business", "Individual"),
-//        selectedOption = remember { mutableStateOf(options[0]) },
-//        onOptionSelectedChange = {},
-//        passwordVisibility = false,
-//        onPasswordVisibilityChange = {},
-//        confirmPasswordVisibility = false,
-//        onConfirmPasswordVisibilityChange = {},
-//        validationMessage = null,
-//        registrationSuccess = false,
-//        otp = "",
-//        context = LocalContext.current
-//
-//    )
-//}
+@Preview
+@Composable
+
+fun RegistrationScreenPreview(){
+    val options = listOf("Business", "Individual")
+    //val selectedOption = remember { mutableStateOf(options[0]) }
+    Register(
+        navigatorComponent = rememberNavController(),
+        verticalScrollState = rememberScrollState(),
+        phoneNumber = "",
+        phoneNumberBorderColor = Color(0xFF2F4858),
+        onContactPhoneChange = {},
+        password = "",
+        passwordBorderColor = Color(0xFF2F4858),
+        onPasswordChange = {},
+        confirmPassword = "",
+        confirmPasswordBorderColor = Color(0xFF2F4858),
+        onConfirmedPasswordChange = {},
+        registerViewModel = RegisterViewModel(),
+        options = options,
+        selectedOption = remember { mutableStateOf(options[0]) },
+        onOptionSelectedChange = {},
+        passwordVisibility = false,
+        onPasswordVisibilityChange = {},
+        confirmPasswordVisibility = false,
+        onConfirmPasswordVisibilityChange = {},
+        validationMessage = "",
+        registrationSuccess = false,
+        otp = "",
+        context = LocalContext.current,
+        isLoading = false
+    )
+}
+

@@ -19,10 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,25 +41,31 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.fyp.sctsma.R
+import com.fyp.sctsma.view.composables.commonComponents.CircularProgressDisplay
+import com.fyp.sctsma.view.composables.commonComponents.OTPMessage
+import com.fyp.sctsma.view.composables.commonComponents.ValidationErrorMessage
+import com.fyp.sctsma.view.composables.navigation.ExternalRoutes
+import com.fyp.sctsma.view.composables.navigation.InternalRoutes
 import com.fyp.sctsma.viewmodel.OtpViewModel
 
-class OTPScreen(val otp: String) : Screen{
-    @Composable
-    override fun Content() {
+@Composable
+fun OTPScreen(otp:String?, navController: NavController){
+
         //navigation
         val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-        //view model object
-       val otpViewModel = rememberScreenModel{ OtpViewModel() }
+    //view model object
+       val otpViewModel = remember{ OtpViewModel() }
         //hoisting the states
-        var otpEntry by remember { mutableStateOf("") } //this remembers the phone input
+        var otpEntry by remember { mutableStateOf("") } //otp entry state
+        val otp = otp
+
+
         //login state check
        val validationMessage by otpViewModel.errorMessage.observeAsState()
        val otpToastMessage by otpViewModel.otpData.observeAsState()
@@ -79,12 +83,7 @@ class OTPScreen(val otp: String) : Screen{
         )
         {
             Spacer(modifier = Modifier.fillMaxHeight(.05f))
-            if (isLoading == true){
-                CircularProgressIndicator(
-                    color = Color(0xFFFAFAFA)
-                )
-            }
-
+            CircularProgressDisplay(isLoading!!)
             //App title text
             Text(text = stringResource(
                 R.string.app_name),
@@ -150,56 +149,18 @@ class OTPScreen(val otp: String) : Screen{
             ){
 
                // Spacer(modifier = Modifier.height(10.dp))
-                if (
-                    validationMessage != null){
-                    Column(
-                        modifier = Modifier
-                            .background(
-                                Color.Red
-                            )
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(top = 4.dp, bottom = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = validationMessage!!,
-                            fontSize = 8.sp,
-                            textAlign = TextAlign.Center,
-                            color = Color.White,
-                            modifier = Modifier.padding(4.dp)
-                        )
-                    }
-                }
-                if (otp.isNotEmpty()){
-                    Column(
-                        modifier = Modifier
-                            .background(
-                                Color(0xFF2F4858)
-                            )
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(top = 4.dp, bottom = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = otp,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            textAlign = TextAlign.Center,
-                            color = Color.White,
-                            modifier = Modifier.padding(4.dp)
-                        )
-                    }
-                }
+                ValidationErrorMessage(validationMessage)
 
-                Spacer(modifier = Modifier.fillMaxHeight(.15f))
+                    OTPMessage(otp!!)
+
+
+
+                Spacer(modifier = Modifier.fillMaxHeight(.05f))
 
                 Text(
                     text = "Activate Account with OTP",
                     style = TextStyle(
+                        textAlign = TextAlign.Center,
                         fontSize = 16.sp,
                         fontFamily = FontFamily(Font(R.font.poppins_regular)),
                         fontWeight = FontWeight(500),
@@ -224,13 +185,14 @@ class OTPScreen(val otp: String) : Screen{
                                     otpViewModel.otp.value = it
                     },
                     textStyle = TextStyle(
+                        textAlign = TextAlign.Center,
                         fontSize = 20.sp, // Adjust font size as needed
                         fontWeight = FontWeight.Bold ,
                         color = Color(0xFF2F4858)
                     ),
                     placeholder = {
                         Text(
-                            text = "______-_____-______-______-______-______",
+                            text = "____-_____-____-_____-____-____",
                             textAlign = TextAlign.Center
 
                         )
@@ -252,13 +214,11 @@ class OTPScreen(val otp: String) : Screen{
                 Spacer(modifier = Modifier.height(10.dp))
                 LaunchedEffect(key1 = activationSuccess) {
                     if (activationSuccess == true) {
-                        Toast.makeText(
-                            context,
-                            "$otpToastMessage",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        navigator.popUntilRoot() // Pop back to the root of the navigation stack
-                        navigator.push(LoginScreen()) // Navigate to LoginScreen
+                        Toast.makeText(context,"$otpToastMessage",Toast.LENGTH_SHORT).show()
+                        navController.popBackStack(InternalRoutes.HomeScreen.route,inclusive = true)
+                        navController.navigate(ExternalRoutes.LoginScreen.route)
+
+                    // Navigate to LoginScreen
                     }
                 }
                 Button(
@@ -290,7 +250,7 @@ class OTPScreen(val otp: String) : Screen{
 
                 Button(
                     onClick = {
-                        // navigator.pop()
+                        navController.popBackStack()
 
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -323,25 +283,13 @@ class OTPScreen(val otp: String) : Screen{
         }
 
     }
+@Preview
+@Composable
+fun OTPScreenPreview(){
+    OTPScreen("", rememberNavController())
 }
 
-@Composable
-fun OTPMessage(
-    modifier: Modifier = Modifier,
-    text: String = "075465"
-) {
-    Text(
-        text = text,
-        modifier = modifier,
-        style = TextStyle(
-            fontSize = 20.sp,
-            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-            fontWeight = FontWeight(500),
-            color = Color(0xFFFAFAFA),
-            textAlign = TextAlign.Center
-        )
-    )
-}
+
 
 
 

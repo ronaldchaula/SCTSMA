@@ -26,6 +26,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+<!--        <Service android:name=".PushNotificationService"-->
+<!--            android:exported="false">-->
+<!--            <Intent-Filter>-->
+<!--                <action android:name="com.google.firebase.MESSAGING_EVENT" />-->
+<!--            </Intent-Filter>-->
+<!--        </Service>-->
     </application>
 
 </manifest>

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     kotlin("plugin.serialization") version "2.0.0"
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -102,6 +103,7 @@ dependencies {
     implementation(libs.moshi.kotlin)
 
     implementation(libs.androidx.compiler)
+    implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -109,4 +111,21 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    //constraint Layout dependencies
+    implementation(libs.androidx.constraintlayout)
+    implementation (libs.androidx.constraintlayout.compose)
+    implementation (libs.androidx.constraintlayout.core)
+
+    //work runtime dependencies
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    //coil image dependency
+    implementation("io.coil-kt:coil-compose:2.2.2")
+
+    implementation( libs.hilt.android)
+   // kapt( "com.google.dagger:hilt-android-compiler:2.44")
+
+    implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
+    implementation("com.google.firebase:firebase-messaging")
+
 }

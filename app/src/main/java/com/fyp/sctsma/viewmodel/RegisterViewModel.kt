@@ -5,22 +5,21 @@ import androidx.lifecycle.MutableLiveData
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.fyp.sctsma.api.RetrofitInstance
-import com.fyp.sctsma.model.RegisterUser
+import com.fyp.sctsma.model.registration.RegisterUser
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 
 class RegisterViewModel: ScreenModel {
 
 
+    val isLoading = MutableLiveData(false)
     private val tag = "RegisterViewModel"
     val password = MutableLiveData<String>()
     val confirmPassword= MutableLiveData<String>()
     var phoneNumber = MutableLiveData<String>()
     val accountType = MutableLiveData("Business")
-    var errorMessage = MutableLiveData<String>()
+    var errorMessage = MutableLiveData<String?>()
    //primitives that will be submitted to the end point
     //checks if the registration is successful before moving to the next screen
     private val _registrationSuccess = MutableLiveData(false)
@@ -32,7 +31,7 @@ class RegisterViewModel: ScreenModel {
     //assign values from the live data to the registerUser object
 
     private fun validatePhoneNumber(): Boolean {
-        val regex = Regex("^255\\d{0,9}$")
+        val regex = Regex("^255\\d*$")
         return phoneNumber.value?.matches(regex) ?: false
     }
 
@@ -80,7 +79,7 @@ class RegisterViewModel: ScreenModel {
         if (!validateInput()) {
             return
         }
-
+errorMessage.value = null
         //this part down here will run only when the validateInput() is true so the return block can be ignored
         screenModelScope.launch(Dispatchers.Main) {
 
@@ -90,7 +89,9 @@ class RegisterViewModel: ScreenModel {
                     accountType = accountType.value ?: "",
                     contactPhoneNumber = phoneNumber.value ?: ""
                 )
-                val response = RetrofitInstance.appApi.sendRegistrationData(user)
+                isLoading.value = true
+                val response = RetrofitInstance.unAuthenticatedApi.sendRegistrationData(user)
+                isLoading.value = false
                 if (response.isSuccessful) {
                     val registrationResponse = response.body()
                     // Extract data from registrationResponse
@@ -112,6 +113,7 @@ class RegisterViewModel: ScreenModel {
                 }
 
             } catch (e: Exception) {
+                isLoading.value = false
                 Log.e(tag, "Registration failed", e)
                 errorMessage.value = "Oops! Something Went wrong"
                 Log.e(tag, e.message.toString())

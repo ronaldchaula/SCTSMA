@@ -1,32 +1,40 @@
 package com.fyp.sctsma.viewmodel
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.fyp.sctsma.api.RetrofitInstance
 import com.fyp.sctsma.model.userData.LoginUser
+import com.fyp.sctsma.repository.AppPrefRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class LoginViewModel : ScreenModel {
+class LoginViewModel(private val context: Context) : ScreenModel {
+    private val appPrefRepository = AppPrefRepository(context)
     val isLoading: MutableLiveData<Boolean> = MutableLiveData(false)
-    private val tag = "RegisterViewModel"
+    private val TAG = "LoginViewModel"
     val password = MutableLiveData<String>()
     var phoneNumber = MutableLiveData<String>()
-    var errorMessage = MutableLiveData<String>()
-    //primitives that will be submitted to the en
-    val username = MutableLiveData<String>()
-    //checks if the registration is successful before moving to the next screen
+    var errorMessage = MutableLiveData<String?>()
+
+    //primitives that will be submitted to the persistent store
+    private val _username = MutableLiveData<String?>()
+    val username = _username
     private val _loginSuccess = MutableLiveData(false)
-    //we are referring this value on the composable screen
     val loginSuccess: MutableLiveData<Boolean> = _loginSuccess
-    val usernameregister = MutableLiveData<String>()
-    val accessToken = MutableLiveData<String>("")
+    private val _accessToken = MutableLiveData<String?>("")
+    val accessToken = _accessToken
+    private val _lockNumber = MutableLiveData<String?>("")
+    val lockNumber = _lockNumber
+
+
+
+
 
     private fun validatePhoneNumber(): Boolean {
-        val regex = Regex("^255\\d{0,9}$")
+        val regex = Regex("^255\\d*$")
         return phoneNumber.value?.matches(regex) ?: false
     }
 
@@ -41,7 +49,11 @@ class LoginViewModel : ScreenModel {
             return false
         }
         if (!validatePhoneNumber()) {
-            errorMessage.value = "Phone number begins with 255 and not less than 12 characters"
+            errorMessage.value = "Phone number must begin with 255"
+            return false
+        }
+        if (phoneNumber.value!!.length != 12) {
+            errorMessage.value = "Phone number must be 12 digits"
             return false
         }
         if (password.value.isNullOrEmpty()) {
@@ -49,7 +61,7 @@ class LoginViewModel : ScreenModel {
             return false
         }
         if (!validatePassword()) {
-            errorMessage.value = "Password can't be less than 6 characters and greater than 12 characters"
+            errorMessage.value = "Password must have 6-12 characters"
             return false
         }
 
@@ -60,7 +72,7 @@ class LoginViewModel : ScreenModel {
         if (!validateInput()) {
             return
         }
-
+        errorMessage.value = null
         //this part down here will run only when the validateInput() is true so the return block can be ignored
         screenModelScope.launch(Dispatchers.Main) {
 
@@ -70,21 +82,35 @@ class LoginViewModel : ScreenModel {
                     password = password.value?:"",
                     username = phoneNumber.value?:"",
                 )
-                val response = RetrofitInstance.appApi.loginUser(user)
+                val response = RetrofitInstance.unAuthenticatedApi.loginUser(user)
+                isLoading.value = false
                 if (response.isSuccessful) {
-                    val loginResponse = response.body()
-                    // Extract data from registrationResponse
-                    isLoading.value = false
-                    val status = loginResponse?.status
+                   val responseBody = response.body()
+                    Log.i(TAG, "Json response status value: ${response.body()?.status}")
+                    Log.i(TAG, "Json response message value: ${response.body()?.message}")
+                    Log.i(TAG, "Json response data value: ${response.body()?.data}")
+                    Log.i(TAG, "Retrofit network response code: ${response.code()}")
+                    Log.i(TAG, "Retrofit network response message: ${response.message()}")
+                    Log.i(TAG, "Retrofit network error response: ${response.errorBody()}")
+                    Log.i(TAG, "Retrofit network response headers: ${response.headers()}")
+                    Log.i(TAG, "Retrofit network raw response: ${response.raw()}")
 
+                if(responseBody?.status == "OK" && responseBody?.message == "success"){
 
-                    if(status == "1"){
-                        _loginSuccess.value = true // Signal success
-                        username.value = loginResponse.data.user.username
-                        val lockNumber = loginResponse.data.user.lockNumber
-                        accessToken.value = loginResponse.data.accessToken
-                        Log.i(tag, "Registration successful: $username, $lockNumber,$accessToken")
+                    _loginSuccess.value = true // Signal success
+                    //saving the data to user preferences
+                    responseBody.data?.let { data ->
+                        appPrefRepository.saveAccessData(data)
+                        data.user?.let { user ->
+                            appPrefRepository.saveUserData(user)
+                        }
                     }
+
+                    //get values from preferences
+                    _accessToken.value = appPrefRepository.getAccessData()?.accessToken
+                    _lockNumber.value = appPrefRepository.getUserData()?.lockNumber
+                    _username.value = appPrefRepository.getUserData()?.username
+                }
 
 
                     // ... extract other fields as needed
@@ -92,15 +118,15 @@ class LoginViewModel : ScreenModel {
                 } else {
                     // Handle error response
                     val errorBody = response.errorBody()?.string()
-                    Log.e(tag, "Login failed: $errorBody")
+                    Log.e(TAG, "Login failed: $errorBody")
                     errorMessage.value = "Either the username or password is incorrect. Please try again."
                 }
 
             } catch (e: Exception) {
                 isLoading.value = false
-                Log.e(tag, "Login failed", e)
+                Log.e(TAG, "Login failed", e)
                 errorMessage.value = "Oops! Something Went wrong, try again later"
-                Log.e(tag, e.message.toString())
+                Log.e(TAG, e.message.toString())
             }
         }
     }

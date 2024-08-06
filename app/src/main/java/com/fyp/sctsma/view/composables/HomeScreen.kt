@@ -20,39 +20,55 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.fyp.sctsma.R
+import com.fyp.sctsma.view.composables.navigation.InternalRoutes
+import com.fyp.sctsma.viewmodel.SharedViewModel
 import components.commonComponents.DarkOverlayComponentBar
 
-class HomeScreen:Screen{
-    @Composable
-    override fun Content() {
-val homeScreenNavigator = LocalNavigator.currentOrThrow
-        Home(
-            homeScreenNavigator
-        )
 
+@Composable
+fun HomeScreen(navController: NavHostController) {
+
+val context = LocalContext.current
+val sharedViewModel = remember { SharedViewModel(context) }
+val username by sharedViewModel.username.observeAsState()
+val lockNumber by sharedViewModel.lipaNumber.observeAsState()
+
+
+
+        Home(
+            username,
+            lockNumber,
+            navController
+        )
     }
-}
+
+
+
+
 @Composable
 fun Home(
-    navigator: Navigator?
+    username: String?,
+    lockNumber: String?,
+    navController: NavHostController
 ) {
 
     Box(modifier = Modifier.fillMaxSize() ){
@@ -67,8 +83,11 @@ Column(
        ,
         horizontalAlignment = Alignment.CenterHorizontally
 ) {
-    Header()
-    Spacer(modifier = Modifier.height(35.dp))
+    Header(
+        username = username,
+        lockNumber = lockNumber
+    )
+    Spacer(modifier = Modifier.height(30.dp))
     Row(
         modifier = Modifier
             .fillMaxWidth(.72f)
@@ -187,7 +206,7 @@ Column(
             }
         }
     }
-    Spacer(modifier = Modifier.height(25.dp))
+    Spacer(modifier = Modifier.height(10.dp))
     Column(
         modifier = Modifier
             .fillMaxWidth(.72f)
@@ -195,47 +214,50 @@ Column(
 horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Button(
-            onClick = {
-                navigator?.push(CreateOrdersScreen())
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2F4858)
-            ),
-            shape = RoundedCornerShape(15.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(55.dp)
+        if (username != null) {
+            Button(
+                onClick = {
+                    navController.navigate(InternalRoutes.OrderCreationScreen.route)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2F4858)
+                ),
+                shape = RoundedCornerShape(15.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp),
+                enabled = username.isNotEmpty()
 
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ){
-               Image(
-                   painter = (painterResource(R.drawable.create_ic)),
-                   contentDescription ="",
-                   modifier = Modifier
-                       .width(34.dp)
-                       .height(34.dp))
-                Spacer(modifier = Modifier.width(40.dp)) // Space between icon and text
-                Text(
-                    text = "Create Order",
-                    modifier = Modifier.wrapContentSize(Alignment.Center),
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight(600),
-                        color = Color(0xFFFAFAFA),
-                        textAlign = TextAlign.Center,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Image(
+                        painter = (painterResource(R.drawable.create_ic)),
+                        contentDescription ="",
+                        modifier = Modifier
+                            .width(34.dp)
+                            .height(34.dp))
+                    Spacer(modifier = Modifier.width(40.dp)) // Space between icon and text
+                    Text(
+                        text = "Create Order",
+                        modifier = Modifier.wrapContentSize(Alignment.Center),
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight(600),
+                            color = Color(0xFFFAFAFA),
+                            textAlign = TextAlign.Center,
+                        )
                     )
-                )
-                Spacer(modifier = Modifier.width(45.dp))
-            }
+                    Spacer(modifier = Modifier.width(45.dp))
+                }
 
+            }
         }
 
         Button(
             onClick = {
-
+                navController.navigate(InternalRoutes.OrderCompletionScreen.route)
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF2F4858)
@@ -254,7 +276,7 @@ horizontalAlignment = Alignment.CenterHorizontally,
                     .height(26.dp))
             Spacer(modifier = Modifier.width(38.dp)) // Space between icon and text
             Text(
-                text = "Scan QR Code",
+                text = "Complete Orders",
                 modifier = Modifier.wrapContentSize(Alignment.Center),
                 style = TextStyle(
                     fontSize = 16.sp,
@@ -272,6 +294,7 @@ horizontalAlignment = Alignment.CenterHorizontally,
 
 
     }
+
 }
 
 
@@ -286,11 +309,14 @@ horizontalAlignment = Alignment.CenterHorizontally,
 
 
 @Composable
-fun Header(){
+fun Header(
+    username: String?,
+    lockNumber: String?
+){
     Box(
         modifier = Modifier
             .fillMaxWidth(1f)
-            .fillMaxHeight(.45f)
+            .fillMaxHeight(.42f)
             .border(width = 1.dp, color = Color(0xFF000000))
     ){
         //top cover image
@@ -298,7 +324,10 @@ fun Header(){
         //dark color on top of the image
         DarkOverlayComponentBar()
         //top navbar
-        ContainedHeaderContent()
+        ContainedHeaderContent(
+            username = username,
+            lockNumber = lockNumber
+        )
 
 
 
@@ -308,76 +337,40 @@ fun Header(){
 }
 
 @Composable
-private fun ContainedHeaderContent() {
+private fun ContainedHeaderContent(
+    username: String? = null,
+    lockNumber: String? = null
+) {
     Column(
         modifier = Modifier
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        TopNavBar(modifier = Modifier)
+
         Spacer(modifier = Modifier.fillMaxHeight(.30f))
-        HomeGreeting()
+        HomeGreeting(
+            username = username,
+            lockNumber = lockNumber
+        )
     }
 }
 
 @Composable
-private fun HomeGreeting() {
+private fun HomeGreeting(
+    username: String? = null,
+    lockNumber: String? = null
+) {
     Text(
-        text = stringResource(R.string.home_screen_welcome_note),
+        text = "Welcome back $username\n\n Lipa #: $lockNumber",
         fontSize = 18.sp,
         color = Color(0xFFFAFAFA),
-        fontWeight = FontWeight(400),
+        fontWeight = FontWeight(500),
         textAlign = TextAlign.Center,
         modifier = Modifier
-            .padding(top = 12.dp)
+            .padding(top = 20.dp)
+
     )
 }
-
-@Composable
-private fun TopNavBar(modifier: Modifier) {
-    Spacer(modifier = Modifier.height(15.dp))
-    Row(
-
-        modifier
-            .fillMaxWidth(1f)
-            .height(56.dp)
-            ,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            painter = painterResource(R.drawable.menu_button),
-            colorFilter = ColorFilter.tint(Color(0xFFFAFAFA)),
-            contentDescription = "top menu bar",
-            modifier = Modifier
-                .width(60.dp)
-                .height(60.dp)
-                .padding(start = 16.dp)
-        )
-        Text(
-            text = stringResource(R.string.home_label),
-            fontSize = 24.sp,
-            color = Color(0xFFFAFAFA),
-            fontWeight = FontWeight(500),
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .alignByBaseline()
-                .padding(top = 12.dp)
-        )
-        Image(
-            painter = painterResource(R.drawable.user_avatar),
-            colorFilter = ColorFilter.tint(Color(0xFFFAFAFA)),
-            contentDescription = "top menu bar",
-            modifier = Modifier
-                .width(65.dp)
-                .height(65.dp)
-                .padding(end = 16.dp),
-
-        )
-    }
-}
-
-
 
 @Composable
 private fun HomeScreenBackgroundImage() {
@@ -387,10 +380,16 @@ private fun HomeScreenBackgroundImage() {
         contentScale = ContentScale.Crop,
         modifier = Modifier
             .fillMaxSize()
-            .fillMaxSize()
+
 
     )
 }
 
-
+@Preview
+@Composable
+fun HomeScreenPreview() {
+    HomeScreen(
+        navController = rememberNavController()
+    )
+}
 

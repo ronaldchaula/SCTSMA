@@ -1,12 +1,11 @@
 package com.fyp.sctsma.viewmodel
 
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.MutableLiveData
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.fyp.sctsma.api.RetrofitInstance
-import com.fyp.sctsma.model.OTP
+import com.fyp.sctsma.model.otp.OTP
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -17,7 +16,7 @@ class OtpViewModel: ScreenModel {
     //opt String is collected from the UI and is checked through out the view Model
     val otp = MutableLiveData<String>()
     private val tag = "OtpViewModel"
-    val errorMessage = MutableLiveData<String>()
+    val errorMessage = MutableLiveData<String?>()
     val isLoading = MutableLiveData<Boolean>(false)// State for loading indicator
     val activationSuccess = MutableLiveData<Boolean>(false) // State for activation success
     var otpMessage = MutableLiveData<String>()
@@ -49,12 +48,13 @@ class OtpViewModel: ScreenModel {
                 if (!validateInput()) {
                     return
                 }
+            errorMessage.value = null // Clear any previous error message
         screenModelScope.launch(Dispatchers.Main)  {
                     try {
                         isLoading.value = true // Show loading indicator
                         val otpObject = OTP(otp.value?:"")
                         Log.i(tag, "Sending OTP: ${otp.value}")
-                        val otpResponse = RetrofitInstance.appApi.activateAccount(otpObject)
+                        val otpResponse = RetrofitInstance.unAuthenticatedApi.activateAccount(otpObject)
                         isLoading.value = false // Hide loading indicator
                         if (otpResponse.isSuccessful) {
                             // if successful, set activationSuccess to true

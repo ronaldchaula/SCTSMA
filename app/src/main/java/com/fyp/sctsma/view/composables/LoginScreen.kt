@@ -1,7 +1,6 @@
 package com.fyp.sctsma.view.composables
 
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,11 +16,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,39 +37,44 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.fyp.sctsma.R
+import com.fyp.sctsma.view.composables.commonComponents.CircularProgressDisplay
+import com.fyp.sctsma.view.composables.commonComponents.PasswordInput
+import com.fyp.sctsma.view.composables.commonComponents.PhoneNumberInput
+import com.fyp.sctsma.view.composables.commonComponents.ValidationErrorMessage
+import com.fyp.sctsma.view.composables.navigation.ExternalRoutes
 import com.fyp.sctsma.viewmodel.LoginViewModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
 
-class LoginScreen : Screen{
-    @Composable
-    override fun Content() {
+@Composable
+fun LoginScreen(initialNavController: NavHostController) {
+        val context = LocalContext.current
         //navigation component
-        val navigator = LocalNavigator.currentOrThrow
+        val navigationController = initialNavController
         //view model object
-       val loginViewModel = rememberScreenModel{LoginViewModel()}
+         val loginViewModel = remember{LoginViewModel(context)}
         //hoisting the states
         var phoneNumber by remember { mutableStateOf("") } //this remembers the phone input
         var password by remember { mutableStateOf("") } //this remembers the password input
+
         //login state check
         val validationMessage by loginViewModel.errorMessage.observeAsState()
+        val username by loginViewModel.username.observeAsState()
         val loginSuccess by loginViewModel.loginSuccess.observeAsState()
-        val accessToken by loginViewModel.accessToken.observeAsState()
         val isLoading by loginViewModel.isLoading.observeAsState()
-        val context = LocalContext.current
+
+        // password Visibility state
+        var passwordVisibility by remember { mutableStateOf(false) }
+        //waiting progress icon
 
      Login(
          //passing the states
-         navigator,
+         navigationController,
          phoneNumber = phoneNumber,
          onUserPhoneUpdated = { newPhoneNumber ->
              phoneNumber = newPhoneNumber
@@ -88,16 +89,21 @@ class LoginScreen : Screen{
          loginSuccess = loginSuccess!!,
          isLoading = isLoading!!,
          context = context,
-         accessToken!!,
-         validationMessage
+         validationMessage,
+         passwordVisibility = passwordVisibility,
+         onPasswordVisibilityChange = {
+             passwordVisibility = it
+         }
+         ,
+         username
          )
 
     }
-}
+
 
 @Composable
 fun Login(
-    navigator: Navigator,
+    navigationController: NavHostController,
     phoneNumber: String,
     onUserPhoneUpdated: (String) -> Unit,
     password: String,
@@ -106,8 +112,10 @@ fun Login(
     loginSuccess: Boolean,
     isLoading: Boolean,
     context: Context = LocalContext.current,
-    accessToken: String,
-    validationMessage: String?
+    validationMessage: String?,
+    passwordVisibility: Boolean,
+    onPasswordVisibilityChange: (Boolean) -> Unit,
+    username: String?
 ) {
 
 //Central Arrangement
@@ -121,11 +129,10 @@ fun Login(
         )
         {
             Spacer(modifier = Modifier.fillMaxHeight(.05f))
-            if (isLoading){
-                CircularProgressIndicator(
-                    color = Color(0xFFFAFAFA)
-                )
-            }
+            //loading icon
+            CircularProgressDisplay(isLoading)
+
+
 
             //App title text
             Text(text = stringResource(
@@ -166,10 +173,10 @@ fun Login(
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.Top,
                 modifier = Modifier
                     .width(294.dp)
-                    .height(365.dp)
+                    .wrapContentHeight()
                     .clip(
                         shape = RoundedCornerShape(
                             topStart = 15.dp,
@@ -190,114 +197,23 @@ fun Login(
                         spotColor = Color.DarkGray // Color for light source
                     )
             ){
-                if (
-                    validationMessage != null){
-                    Column(
-                        modifier = Modifier
-                            .background(
-                                Color.Red
-                            )
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(top = 4.dp, bottom = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = validationMessage,
-                            fontSize = 8.sp,
-                            textAlign = TextAlign.Center,
-                            color = Color.White,
-                            modifier = Modifier.padding(4.dp)
-                        )
-                    }
-                }
-                //Phone number label
-                Text(
-                    text = "Phone Number",
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        fontWeight = FontWeight(500),
-                        color = Color(0xFF2F4858)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth(.9f)
-                        .padding(bottom = 5.dp)
+                ValidationErrorMessage(validationMessage)
+
+                Spacer(modifier = Modifier.fillMaxHeight(.01f))
+//PhoneNumberInput has its own title and input capabilities you just need to use it and pass it necessary params
+                PhoneNumberInput(
+                    phoneNumber = phoneNumber,
+                    onContactPhoneChange = onUserPhoneUpdated,
+                    phoneNumberBorderColor = Color(0xFF2F4858),
                 )
-
-                //Phone number input
-                OutlinedTextField(
-                    value = phoneNumber ,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true,
-                    maxLines = 1,
-                    onValueChange =onUserPhoneUpdated,
-                    placeholder = {
-                        Text(text = "(+255)07XXXXXXXX")
-                    },
-                    //styling
-                    textStyle = TextStyle(
-                        fontSize = 20.sp, // Adjust font size as needed
-                        fontWeight = FontWeight(500) ,
-                        color = Color(0xFF2F4858)
-                    ),
-                    shape = RoundedCornerShape(15.dp),
-                    modifier = Modifier
-                        .fillMaxWidth(.9f)
-                        .height(55.dp)
-                        .border(
-                            width = .1.dp,
-                            color = Color(0xFF2F4858),
-                            shape = RoundedCornerShape(15.dp)
-                        )
-                        .background(Color(0xFFFAFAFA))
+                PasswordInput(
+                    password = password,
+                    onPasswordChange = onPasswordUpdated,
+                    passwordBorderColor = Color(0xFF2F4858),
+                    passwordVisibility = passwordVisibility,
+                    onPasswordVisibilityChange = onPasswordVisibilityChange
                 )
-
-
                 //Password
-                Text(
-                    text = "Password",
-                    style = TextStyle(
-                        fontSize = 16.sp,
-//                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        fontWeight = FontWeight(500),
-                        color = Color(0xFF2F4858)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth(.9f)
-                        .padding(bottom = 5.dp, top = 5.dp)
-                )
-
-                //Password
-                OutlinedTextField(
-                    value = password ,
-                    onValueChange =onPasswordUpdated,
-                    placeholder = {Text(text = "Type password here")}
-                    ,
-                    singleLine = true,
-                    maxLines = 1,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            textStyle = TextStyle(
-                            fontSize = 20.sp, // Adjust font size as needed
-                    fontWeight = FontWeight(500) ,
-                    color = Color(0xFF2F4858)
-                ),
-                    //styling
-
-                    shape = RoundedCornerShape(15.dp),
-                    modifier = Modifier
-                        .fillMaxWidth(.9f)
-                        .height(55.dp)
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFF2F4858),
-                            shape = RoundedCornerShape(15.dp)
-                        )
-                        .background(Color(0xFFFAFAFA))
-                )
-
 
                 Button(
                     onClick ={
@@ -325,12 +241,8 @@ fun Login(
 
                 LaunchedEffect(key1 = loginSuccess) {
                     if (loginSuccess) {
-                        Toast.makeText(context,
-                            "Logged in successfully",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        navigator.popUntilRoot() // Pop back to the root of the navigation stack
-                        navigator.push(HomeRoute()) // Navigate to LoginScreen
+                        navigationController.popBackStack(0, true)
+                        navigationController.navigate(ExternalRoutes.HomeRoute.route)
                     }
                 }
 
@@ -350,7 +262,7 @@ fun Login(
 
                 Button(
                     onClick = {
-                        navigator.push(RegistrationScreen())
+                        navigationController.navigate(ExternalRoutes.RegisterScreen.route)
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF2F4858)
@@ -373,6 +285,7 @@ fun Login(
                             textAlign = TextAlign.Center,
                         ))
                 }
+                Spacer(modifier = Modifier.height(20.dp))
 
             }
 
@@ -382,27 +295,10 @@ fun Login(
         }
     }
 
-//error message
+
+@Preview
 @Composable
-fun ErrorText() {
-Text(
-    modifier = Modifier
-        .fillMaxWidth(.9f)
-        .height(5.dp)
-        .padding(top = 10.dp)
-,
-    text = "Either phone number or password is incorrect",
-    style = TextStyle(
-        fontSize = 12.sp,
-        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-        fontWeight = FontWeight(500),
-        color = Color.Red))}
-
-
-//
-//@Preview
-//@Composable
-//fun LoginPreview(){
-//    Login(phoneNumber = phoneNumber, password = password)
-//}
+fun LoginPreview(){
+    LoginScreen(rememberNavController())
+}
 

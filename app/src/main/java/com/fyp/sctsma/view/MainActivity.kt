@@ -1,19 +1,31 @@
 package com.fyp.sctsma.view
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.transitions.SlideTransition
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.fyp.sctsma.ui.theme.SCTSMATheme
+import com.fyp.sctsma.view.composables.HomeRoute
 import com.fyp.sctsma.view.composables.LandingScreen
+import com.fyp.sctsma.view.composables.LoginScreen
+import com.fyp.sctsma.view.composables.OTPScreen
+import com.fyp.sctsma.view.composables.RegistrationScreen
+import com.fyp.sctsma.view.composables.navigation.ExternalRoutes
+import com.fyp.sctsma.viewmodel.SharedViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,13 +34,11 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             SCTSMATheme {
-                Scaffold { innerPadding ->
-                    NavigationContainer(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                    )
-                }
+                val context = LocalContext.current
+                val navController = rememberNavController()
+                val sharedViewModel = remember { SharedViewModel(context) }
+                val isLoggedIn by sharedViewModel.isLoggedIn.observeAsState(false)
+                NavigationContainer(navController,isLoggedIn, context)
             }
         }
     }
@@ -36,19 +46,32 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun NavigationContainer(
-    modifier: Modifier
-    ) {
-    Navigator(
-        screen = LandingScreen()
-    ){
-            navigator -> SlideTransition(navigator = navigator)
+    initialNavController: NavHostController,
+    isLoggedIn: Boolean,
+    context: Context
+) {
+    NavHost(navController = initialNavController, startDestination = ExternalRoutes.LandingScreen.route){
+        val optPath = ExternalRoutes.OTPScreen.route + "/{otp}"
+        composable(ExternalRoutes.LandingScreen.route){ LandingScreen(initialNavController) }
+        composable(ExternalRoutes.LoginScreen.route){ LoginScreen(initialNavController) }
+        composable(ExternalRoutes.RegisterScreen.route){ RegistrationScreen(initialNavController) }
+        composable(ExternalRoutes.HomeRoute.route){ HomeRoute(initialNavController) }
+        composable(
+            route = optPath,
+            arguments = listOf( navArgument("otp") { type = NavType.StringType }
+            )
+            ){backStackEntry -> OTPScreen(
+            otp = backStackEntry.arguments?.getString("otp") ?: "",
+            initialNavController)
+
+        }
+
+
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun NavigationContainerPreview() {
-NavigationContainer(
-    modifier = Modifier.fillMaxSize()
-)
+NavigationContainer( rememberNavController(), false, LocalContext.current)
 }

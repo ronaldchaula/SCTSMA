@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "833389172533",
+    "project_id": "sctma-90c2d",
+    "storage_bucket": "sctma-90c2d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:833389172533:android:7e8e9ea608776b1a31de7c",
+        "android_client_info": {
+          "package_name": "com.fyp.sctsma"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPvsFImqPCWxk1wdsrNpoJcE0lCe2RMPM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
